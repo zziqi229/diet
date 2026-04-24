@@ -31,6 +31,9 @@ class RegisterResource(MethodView):
         if User.query.filter_by(username=username).first():
             return {"success": False, "message": "username already exists"}, 409
 
+        if User.query.count() >= 10:
+            return {"success": False, "message": "registration is closed, max users reached"}, 403
+
         user = User(username=username)
         user.set_password(password)
         db.session.add(user)
