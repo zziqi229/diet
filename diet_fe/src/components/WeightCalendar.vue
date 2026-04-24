@@ -61,7 +61,7 @@ const recordMap = computed(() => {
   for (const key in map) {
     const records = map[key].records
     const sum = records.reduce((s, r) => s + r.weight_kg, 0)
-    map[key].avgWeight = +(sum / records.length).toFixed(1)
+    map[key].avgWeight = +(sum / records.length).toFixed(2)
   }
   return map
 })

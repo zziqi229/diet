@@ -49,7 +49,7 @@ const sortedRecords = computed(() =>
 const avg = computed(() => {
   if (!props.records.length) return '—'
   const sum = props.records.reduce((s, r) => s + r.weight_kg, 0)
-  return (sum / props.records.length).toFixed(1)
+  return (sum / props.records.length).toFixed(2)
 })
 
 function formatTime(isoStr) {
