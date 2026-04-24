@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg-info/
+*.egg
+*.env
+.env
+.venv
+venv/
+build/
+dist/
+*.sqlite3
+instance/
+*.log
+
+# Flask
+*.db
+*.sqlite
+*.pyc
+*.pyo
+*.pyd
+*.mypy_cache/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# Node/Vue
+node_modules/
+dist/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# MySQL dumps
+*.sql
+*.sql.gz
+
+# Env files
+.env.*
+
+# Others
+coverage/
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# IDEs
+.idea/
+*.iml
+
+# Misc
+*.swp
+*.swo
+
+# Frontend build
+.dockerignore
+.eslintcache
+
+# Ignore local settings
+local_settings.py
