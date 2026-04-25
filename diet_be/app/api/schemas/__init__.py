@@ -22,6 +22,21 @@ from .meal import (
     MealListQuerySchema,
     MealListResponseSchema,
 )
+from .exercise import (
+    ExerciseRecordSchema,
+    ExerciseCreateRequestSchema,
+    ExerciseUpdateRequestSchema,
+    ExerciseRecordResponseSchema,
+    ExerciseListQuerySchema,
+    ExerciseListResponseSchema,
+)
+from .fast import (
+    FastRecordSchema,
+    FastCreateRequestSchema,
+    FastRecordResponseSchema,
+    FastListQuerySchema,
+    FastListResponseSchema,
+)
 
 __all__ = [
     "ErrorResponseSchema",
@@ -43,4 +58,15 @@ __all__ = [
     "MealRecordResponseSchema",
     "MealListQuerySchema",
     "MealListResponseSchema",
+    "ExerciseRecordSchema",
+    "ExerciseCreateRequestSchema",
+    "ExerciseUpdateRequestSchema",
+    "ExerciseRecordResponseSchema",
+    "ExerciseListQuerySchema",
+    "ExerciseListResponseSchema",
+    "FastRecordSchema",
+    "FastCreateRequestSchema",
+    "FastRecordResponseSchema",
+    "FastListQuerySchema",
+    "FastListResponseSchema",
 ]
