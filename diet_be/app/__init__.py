@@ -9,6 +9,7 @@ from .extensions import db, jwt
 from .extensions import api as smorest_api
 from .api.views.auth import auth_bp
 from .api.views.weight import weight_bp
+from .api.views.meal import meal_bp
 
 
 def create_app():
@@ -23,6 +24,7 @@ def create_app():
 
     smorest_api.register_blueprint(auth_bp)
     smorest_api.register_blueprint(weight_bp)
+    smorest_api.register_blueprint(meal_bp)
 
     @app.get("/health")
     def health():

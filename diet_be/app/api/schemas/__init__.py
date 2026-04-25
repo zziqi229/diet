@@ -14,6 +14,14 @@ from .weight import (
     WeightListQuerySchema,
     WeightListResponseSchema,
 )
+from .meal import (
+    MealRecordSchema,
+    MealCreateRequestSchema,
+    MealUpdateRequestSchema,
+    MealRecordResponseSchema,
+    MealListQuerySchema,
+    MealListResponseSchema,
+)
 
 __all__ = [
     "ErrorResponseSchema",
@@ -29,4 +37,10 @@ __all__ = [
     "WeightRecordResponseSchema",
     "WeightListQuerySchema",
     "WeightListResponseSchema",
+    "MealRecordSchema",
+    "MealCreateRequestSchema",
+    "MealUpdateRequestSchema",
+    "MealRecordResponseSchema",
+    "MealListQuerySchema",
+    "MealListResponseSchema",
 ]

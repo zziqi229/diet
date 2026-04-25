@@ -18,6 +18,9 @@ class User(db.Model):
     weight_records = db.relationship(
         "WeightRecord", back_populates="user", lazy="dynamic"
     )
+    meal_records = db.relationship(
+        "MealRecord", back_populates="user", lazy="dynamic"
+    )
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
