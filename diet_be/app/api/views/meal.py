@@ -8,14 +8,13 @@ from ...extensions import db
 from ...models import MealRecord
 from ..schemas import (
     ErrorResponseSchema,
-    MessageResponseSchema,
     MealCreateRequestSchema,
     MealListQuerySchema,
     MealListResponseSchema,
     MealRecordResponseSchema,
     MealUpdateRequestSchema,
+    MessageResponseSchema,
 )
-
 
 meal_bp = Blueprint(
     "meal",
@@ -25,12 +24,6 @@ meal_bp = Blueprint(
 )
 
 
-def _normalize_dt(value: datetime) -> datetime:
-    if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value
-
-
 @meal_bp.route("/")
 class MealCollectionResource(MethodView):
     @jwt_required()
@@ -38,15 +31,31 @@ class MealCollectionResource(MethodView):
     @meal_bp.arguments(MealCreateRequestSchema)
     @meal_bp.response(201, MealRecordResponseSchema)
     @meal_bp.alt_response(400, schema=ErrorResponseSchema)
+    @meal_bp.alt_response(409, schema=ErrorResponseSchema)
     def post(self, data):
         user_id = int(get_jwt_identity())
 
+        existing = (
+            MealRecord.query.filter_by(
+                user_id=user_id,
+                date=data["date"],
+                meal_type=data["meal_type"],
+            )
+            .filter(MealRecord.deleted_at.is_(None))
+            .first()
+        )
+        if existing:
+            return {
+                "success": False,
+                "message": "record already exists for this date and meal_type",
+            }, 409
+
         record = MealRecord(
             user_id=user_id,
-            content=data["content"],
-            satiety=data["satiety"],
+            date=data["date"],
             meal_type=data["meal_type"],
-            eaten_at=_normalize_dt(data["eaten_at"]),
+            intake_level=data["intake_level"],
+            note=data.get("note"),
         )
         db.session.add(record)
         db.session.commit()
@@ -68,11 +77,11 @@ class MealCollectionResource(MethodView):
         start = query_args.get("start")
         end = query_args.get("end")
         if start is not None:
-            query = query.filter(MealRecord.eaten_at >= _normalize_dt(start))
+            query = query.filter(MealRecord.date >= start)
         if end is not None:
-            query = query.filter(MealRecord.eaten_at <= _normalize_dt(end))
+            query = query.filter(MealRecord.date <= end)
 
-        records = query.order_by(MealRecord.eaten_at.asc()).all()
+        records = query.order_by(MealRecord.date.asc(), MealRecord.meal_type.asc()).all()
         return {
             "success": True,
             "data": [r.to_dict() for r in records],
@@ -99,16 +108,14 @@ class MealItemResource(MethodView):
         if record is None:
             return {"success": False, "message": "record not found"}, 404
 
-        if "content" in data:
-            record.content = data["content"]
-        if "satiety" in data:
-            record.satiety = data["satiety"]
-        if "meal_type" in data:
-            record.meal_type = data["meal_type"]
-        if "eaten_at" in data:
-            record.eaten_at = _normalize_dt(data["eaten_at"])
+        if "intake_level" in data:
+            record.intake_level = data["intake_level"]
+        if "note" in data:
+            record.note = data["note"]
 
+        record.updated_at = datetime.now(timezone.utc)
         db.session.commit()
+
         return {"success": True, "data": record.to_dict()}
 
     @jwt_required()
@@ -128,4 +135,5 @@ class MealItemResource(MethodView):
 
         record.soft_delete()
         db.session.commit()
+
         return {"success": True, "message": "record deleted"}

@@ -14,14 +14,6 @@ from .weight import (
     WeightListQuerySchema,
     WeightListResponseSchema,
 )
-from .meal import (
-    MealRecordSchema,
-    MealCreateRequestSchema,
-    MealUpdateRequestSchema,
-    MealRecordResponseSchema,
-    MealListQuerySchema,
-    MealListResponseSchema,
-)
 from .exercise import (
     ExerciseRecordSchema,
     ExerciseCreateRequestSchema,
@@ -30,12 +22,13 @@ from .exercise import (
     ExerciseListQuerySchema,
     ExerciseListResponseSchema,
 )
-from .fast import (
-    FastRecordSchema,
-    FastCreateRequestSchema,
-    FastRecordResponseSchema,
-    FastListQuerySchema,
-    FastListResponseSchema,
+from .meal import (
+    MealRecordSchema,
+    MealCreateRequestSchema,
+    MealUpdateRequestSchema,
+    MealRecordResponseSchema,
+    MealListQuerySchema,
+    MealListResponseSchema,
 )
 
 __all__ = [
@@ -52,21 +45,16 @@ __all__ = [
     "WeightRecordResponseSchema",
     "WeightListQuerySchema",
     "WeightListResponseSchema",
-    "MealRecordSchema",
-    "MealCreateRequestSchema",
-    "MealUpdateRequestSchema",
-    "MealRecordResponseSchema",
-    "MealListQuerySchema",
-    "MealListResponseSchema",
     "ExerciseRecordSchema",
     "ExerciseCreateRequestSchema",
     "ExerciseUpdateRequestSchema",
     "ExerciseRecordResponseSchema",
     "ExerciseListQuerySchema",
     "ExerciseListResponseSchema",
-    "FastRecordSchema",
-    "FastCreateRequestSchema",
-    "FastRecordResponseSchema",
-    "FastListQuerySchema",
-    "FastListResponseSchema",
+    "MealRecordSchema",
+    "MealCreateRequestSchema",
+    "MealUpdateRequestSchema",
+    "MealRecordResponseSchema",
+    "MealListQuerySchema",
+    "MealListResponseSchema",
 ]

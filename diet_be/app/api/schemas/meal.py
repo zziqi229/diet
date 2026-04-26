@@ -1,37 +1,35 @@
-from marshmallow import Schema, fields, validate, validates_schema
-from marshmallow import ValidationError
+from marshmallow import Schema, ValidationError, fields, validate, validates_schema
 
-MEAL_TYPES = ["breakfast", "lunch", "dinner", "late_night", "snack"]
+MEAL_TYPES = ("breakfast", "lunch", "dinner")
+INTAKE_LEVELS = ("fast", "normal", "feast")
 
 
 class MealRecordSchema(Schema):
     id = fields.Integer(required=True)
     user_id = fields.Integer(required=True)
-    content = fields.String(required=True)
-    satiety = fields.Integer(required=True)
+    date = fields.String(required=True)
     meal_type = fields.String(required=True)
-    eaten_at = fields.String(required=True)
+    intake_level = fields.String(required=True)
+    note = fields.String(allow_none=True)
     created_at = fields.String(required=True)
     updated_at = fields.String(required=True)
 
 
 class MealCreateRequestSchema(Schema):
-    content = fields.String(required=True, validate=validate.Length(min=1, max=2000))
-    satiety = fields.Integer(required=True, validate=validate.Range(min=0, max=15))
+    date = fields.Date(required=True)
     meal_type = fields.String(required=True, validate=validate.OneOf(MEAL_TYPES))
-    eaten_at = fields.DateTime(required=True)
+    intake_level = fields.String(required=True, validate=validate.OneOf(INTAKE_LEVELS))
+    note = fields.String(required=False, allow_none=True)
 
 
 class MealUpdateRequestSchema(Schema):
-    content = fields.String(required=False, validate=validate.Length(min=1, max=2000))
-    satiety = fields.Integer(required=False, validate=validate.Range(min=0, max=15))
-    meal_type = fields.String(required=False, validate=validate.OneOf(MEAL_TYPES))
-    eaten_at = fields.DateTime(required=False)
+    intake_level = fields.String(required=False, validate=validate.OneOf(INTAKE_LEVELS))
+    note = fields.String(required=False, allow_none=True)
 
     @validates_schema
     def validate_non_empty(self, data, **kwargs):
         if not data:
-            raise ValidationError("no updatable fields provided (content, satiety, meal_type, eaten_at)")
+            raise ValidationError("no updatable fields provided (intake_level, note)")
 
 
 class MealRecordResponseSchema(Schema):
@@ -40,8 +38,8 @@ class MealRecordResponseSchema(Schema):
 
 
 class MealListQuerySchema(Schema):
-    start = fields.DateTime(required=False)
-    end = fields.DateTime(required=False)
+    start = fields.Date(required=False)
+    end = fields.Date(required=False)
 
 
 class MealListResponseSchema(Schema):
