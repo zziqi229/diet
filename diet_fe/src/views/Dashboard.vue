@@ -2,7 +2,7 @@
   <div class="dashboard">
     <!-- 顶部导航栏 -->
     <van-nav-bar
-      title="健康日历"
+      title="仪表盘"
       class="top-bar"
       :border="false"
     >
@@ -206,6 +206,12 @@
         >确认</van-button>
       </div>
     </van-popup>
+
+    <!-- 底部导航 -->
+    <van-tabbar v-model="tabActive" class="bottom-nav" active-color="#764ba2" inactive-color="#aaa">
+      <van-tabbar-item name="dashboard" icon="calendar-o">仪表盘</van-tabbar-item>
+      <van-tabbar-item name="trend" icon="chart-trending-o" @click="$router.push('/trend')">趋势</van-tabbar-item>
+    </van-tabbar>
   </div>
 </template>
 
@@ -220,8 +226,7 @@ import { exerciseApi } from '@/api/exercise'
 
 const router = useRouter()
 const auth = useAuthStore()
-
-// ─── 日期工具 ───
+const tabActive = ref('dashboard')
 const _today = new Date()
 const _pad = (n) => String(n).padStart(2, '0')
 const todayStr = `${_today.getFullYear()}-${_pad(_today.getMonth() + 1)}-${_pad(_today.getDate())}`
@@ -546,7 +551,7 @@ watch([showWeightDialog, showExerciseDialog, showMealDialog], ([w, e, m]) => {
 .dashboard {
   min-height: 100vh;
   background: #f2f2f7;
-  padding-bottom: 24px;
+  padding-bottom: 72px;
 }
 
 /* ─── 顶部导航 ─── */
@@ -569,6 +574,12 @@ watch([showWeightDialog, showExerciseDialog, showMealDialog], ([w, e, m]) => {
   font-size: 14px;
   cursor: pointer;
   padding: 4px 0;
+}
+
+/* ─── 底部导航 ─── */
+:deep(.van-tabbar) {
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+  border-top: 1px solid #f0f0f5;
 }
 
 .content {

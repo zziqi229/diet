@@ -24,6 +24,12 @@ const routes = [
     component: () => import('@/views/Dashboard.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/trend',
+    name: 'Trend',
+    component: () => import('@/views/Trend.vue'),
+    meta: { requiresAuth: true },
+  },
 ]
 
 const router = createRouter({
