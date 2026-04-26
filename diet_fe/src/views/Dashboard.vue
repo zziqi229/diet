@@ -1,27 +1,26 @@
 <template>
   <div class="dashboard">
-    <var-app-bar title="健康日历" title-position="center" color="#764ba2">
+    <!-- 顶部导航栏 -->
+    <van-nav-bar
+      title="健康日历"
+      class="top-bar"
+      :border="false"
+    >
       <template #right>
-        <var-button text @click="handleLogout">
-          <var-icon name="logout" color="#fff" />
-        </var-button>
+        <span class="logout-btn" @click="handleLogout">退出</span>
       </template>
-    </var-app-bar>
+    </van-nav-bar>
 
     <div class="content">
       <!-- 月份导航 -->
       <div class="month-nav">
-        <var-button round text @click="prevMonth">
-          <var-icon name="chevron-left" />
-        </var-button>
+        <button class="nav-arrow" @click="prevMonth">‹</button>
         <span class="month-title">{{ currentYear }}年{{ currentMonth + 1 }}月</span>
-        <var-button round text @click="nextMonth">
-          <var-icon name="chevron-right" />
-        </var-button>
+        <button class="nav-arrow" @click="nextMonth">›</button>
       </div>
 
       <!-- 日历 -->
-      <div class="calendar-container">
+      <div class="calendar-card">
         <div class="cal-grid">
           <div v-for="d in weekDays" :key="d" class="cal-head">{{ d }}</div>
           <div
@@ -53,24 +52,30 @@
           <div class="legend-item"><span class="dot dot-yellow"></span>正常</div>
           <div class="legend-item"><span class="dot dot-red"></span>大吃</div>
           <div class="legend-item"><span class="dot dot-empty"></span>未记录</div>
-          <div class="legend-item"><span class="exercise-badge"></span>有运动</div>
+          <div class="legend-item"><span class="exercise-dot"></span>有运动</div>
         </div>
       </div>
 
       <!-- 操作区 -->
-      <div class="action-section">
+      <div class="action-card">
         <div class="action-header">
           <span class="action-date">{{ formatDisplayDate(activeDate) }}</span>
-          <span v-if="activeDate === todayStr" class="today-badge">今天</span>
+          <van-tag v-if="activeDate === todayStr" color="#764ba2" text-color="#fff" class="today-tag">今天</van-tag>
         </div>
-        <div class="action-row">
-          <var-button class="action-btn" color="#764ba2" text-color="#fff" @click="openWeightDialog">
-            ⚖️ 记录体重
-          </var-button>
-          <var-button class="action-btn" color="#764ba2" text-color="#fff" @click="openExerciseDialog">
-            🏃 记录锻炼
-          </var-button>
+
+        <!-- 体重 & 运动 -->
+        <div class="btn-row">
+          <button class="action-btn btn-purple" @click="openWeightDialog">
+            <span class="btn-emoji">🪄</span>
+            <span>记录体重</span>
+          </button>
+          <button class="action-btn btn-purple" @click="openExerciseDialog">
+            <span class="btn-emoji">🔥</span>
+            <span>记录锻炼</span>
+          </button>
         </div>
+
+        <!-- 三餐 -->
         <div class="meal-section">
           <div class="meal-label">🍽️ 记录饮食</div>
           <div class="meal-row">
@@ -78,8 +83,11 @@
               v-for="m in mealTypes"
               :key="m.type"
               class="meal-btn"
-              :class="{ 'meal-btn-done': isMealRecorded(activeDate, m.type) }"
-              :disabled="isMealRecorded(activeDate, m.type)"
+              :class="{
+                'meal-btn-done': isMealRecorded(activeDate, m.type) && !isFutureDate(activeDate),
+                'meal-btn-future': isFutureDate(activeDate),
+              }"
+              :disabled="isFutureDate(activeDate)"
               @click="openMealDialog(m.type)"
             >{{ m.label }}</button>
           </div>
@@ -88,34 +96,88 @@
     </div>
 
     <!-- 记录体重弹窗 -->
-    <var-dialog v-model:show="showWeightDialog" title="记录体重">
-      <var-input
-        v-model="weightForm.weight_kg"
-        type="number"
-        placeholder="请输入体重 (kg)"
-        clearable
-      />
-      <template #actions>
-        <var-button text @click="showWeightDialog = false">取消</var-button>
-        <var-button text color="#764ba2" @click="submitWeight" :loading="submitting">确定</var-button>
-      </template>
-    </var-dialog>
+    <van-popup
+      v-model:show="showWeightDialog"
+      position="bottom"
+      round
+      class="bottom-popup"
+      :style="popupKeyboardStyle"
+      @opened="weightFieldRef?.focus()"
+    >
+      <div class="popup-header">
+        <span class="popup-title">⚖️ 记录体重</span>
+        <span class="popup-close" @click="showWeightDialog = false">✕</span>
+      </div>
+      <div class="popup-body">
+        <van-field
+          ref="weightFieldRef"
+          v-model="weightForm.weight_kg"
+          type="number"
+          placeholder="请输入体重 (kg)"
+          class="popup-field"
+          clearable
+        />
+        <van-button
+          block
+          round
+          color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          :loading="submitting"
+          @click="submitWeight"
+        >确认</van-button>
+      </div>
+    </van-popup>
 
     <!-- 记录锻炼弹窗 -->
-    <var-dialog v-model:show="showExerciseDialog" title="记录锻炼">
-      <var-space direction="column" size="12">
-        <var-input v-model="exerciseForm.content" placeholder="锻炼内容（如：跑步5公里）" clearable />
-        <var-input v-model="exerciseForm.duration_minutes" type="number" placeholder="时长（分钟）" clearable />
-      </var-space>
-      <template #actions>
-        <var-button text @click="showExerciseDialog = false">取消</var-button>
-        <var-button text color="#764ba2" @click="submitExercise" :loading="submitting">确定</var-button>
-      </template>
-    </var-dialog>
+    <van-popup
+      v-model:show="showExerciseDialog"
+      position="bottom"
+      round
+      class="bottom-popup"
+      :style="popupKeyboardStyle"
+      @opened="exerciseFieldRef?.focus()"
+    >
+      <div class="popup-header">
+        <span class="popup-title">🏃 记录锻炼</span>
+        <span class="popup-close" @click="showExerciseDialog = false">✕</span>
+      </div>
+      <div class="popup-body">
+        <van-field
+          ref="exerciseFieldRef"
+          v-model="exerciseForm.content"
+          placeholder="锻炼内容"
+          class="popup-field"
+          clearable
+        />
+        <van-field
+          v-model="exerciseForm.duration_minutes"
+          type="number"
+          placeholder="时长（min）"
+          class="popup-field"
+          clearable
+        />
+        <van-button
+          block
+          round
+          color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          :loading="submitting"
+          @click="submitExercise"
+        >确认</van-button>
+      </div>
+    </van-popup>
 
     <!-- 记录饮食弹窗 -->
-    <var-dialog v-model:show="showMealDialog" :title="mealDialogTitle">
-      <div class="intake-section">
+    <van-popup
+      v-model:show="showMealDialog"
+      position="bottom"
+      round
+      class="bottom-popup"
+      :style="popupKeyboardStyle"
+    >
+      <div class="popup-header">
+        <span class="popup-title">{{ mealDialogTitle }}</span>
+        <span class="popup-close" @click="showMealDialog = false">✕</span>
+      </div>
+      <div class="popup-body">
         <div class="intake-label">饮食状态</div>
         <div class="intake-options">
           <div
@@ -124,22 +186,33 @@
             class="intake-opt"
             :class="[opt.colorClass, { 'intake-selected': mealForm.intake_level === opt.value }]"
             @click="mealForm.intake_level = opt.value"
-          >{{ opt.label }}</div>
+          >
+            <span class="intake-emoji">{{ opt.emoji }}</span>
+            <span>{{ opt.label }}</span>
+          </div>
         </div>
+        <van-field
+          v-model="mealForm.note"
+          placeholder="备注（可选）"
+          class="popup-field"
+          clearable
+        />
+        <van-button
+          block
+          round
+          color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          :loading="submitting"
+          @click="submitMeal"
+        >确认</van-button>
       </div>
-      <var-input v-model="mealForm.note" placeholder="备注（可选）" clearable style="margin-top:12px" />
-      <template #actions>
-        <var-button text @click="showMealDialog = false">取消</var-button>
-        <var-button text color="#764ba2" @click="submitMeal" :loading="submitting">确定</var-button>
-      </template>
-    </var-dialog>
+    </van-popup>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Dialog, Snackbar } from '@varlet/ui'
+import { showConfirmDialog, showSuccessToast, showFailToast, showToast } from 'vant'
 import { useAuthStore } from '@/stores/auth'
 import { weightApi } from '@/api/weight'
 import { mealApi } from '@/api/meal'
@@ -169,6 +242,9 @@ const submitting = ref(false)
 // ─── 弹窗状态 ───
 const showWeightDialog = ref(false)
 const showExerciseDialog = ref(false)
+const weightFieldRef = ref(null)
+const exerciseFieldRef = ref(null)
+const editingMealId = ref(null)
 const showMealDialog = ref(false)
 const currentMealType = ref('')
 
@@ -185,9 +261,9 @@ const mealTypes = [
   { type: 'dinner', label: '晚饭' },
 ]
 const intakeOptions = [
-  { value: 'fast', label: '节食', colorClass: 'opt-green' },
-  { value: 'normal', label: '正常', colorClass: 'opt-yellow' },
-  { value: 'feast', label: '大吃', colorClass: 'opt-red' },
+  { value: 'fast', label: '节食', colorClass: 'opt-green', emoji: '🥗' },
+  { value: 'normal', label: '正常', colorClass: 'opt-yellow', emoji: '🍱' },
+  { value: 'feast', label: '大吃', colorClass: 'opt-red', emoji: '🍔' },
 ]
 
 // ─── 计算属性 ───
@@ -227,7 +303,11 @@ const calendarCells = computed(() => {
 function getMealDotClass(dateStr, mealType) {
   const meals = mealData.value.get(dateStr)
   if (!meals || !meals[mealType]) return 'dot-empty'
-  return { fast: 'dot-green', normal: 'dot-yellow', feast: 'dot-red' }[meals[mealType]] || 'dot-empty'
+  return { fast: 'dot-green', normal: 'dot-yellow', feast: 'dot-red' }[meals[mealType].intake_level] || 'dot-empty'
+}
+
+function isFutureDate(dateStr) {
+  return dateStr > todayStr
 }
 
 function isMealRecorded(dateStr, mealType) {
@@ -288,7 +368,7 @@ async function loadMonthData() {
     const mMap = new Map()
     for (const r of mealRes.data.data) {
       if (!mMap.has(r.date)) mMap.set(r.date, {})
-      mMap.get(r.date)[r.meal_type] = r.intake_level
+      mMap.get(r.date)[r.meal_type] = { id: r.id, intake_level: r.intake_level, note: r.note || '' }
     }
     mealData.value = mMap
 
@@ -317,8 +397,16 @@ function openExerciseDialog() {
 
 function openMealDialog(mealType) {
   currentMealType.value = mealType
-  mealForm.intake_level = 'normal'
-  mealForm.note = ''
+  const existing = mealData.value.get(activeDate.value)?.[mealType]
+  if (existing) {
+    editingMealId.value = existing.id
+    mealForm.intake_level = existing.intake_level
+    mealForm.note = existing.note || ''
+  } else {
+    editingMealId.value = null
+    mealForm.intake_level = 'normal'
+    mealForm.note = ''
+  }
   showMealDialog.value = true
 }
 
@@ -334,17 +422,17 @@ function getRecordedAt(dateStr) {
 async function submitWeight() {
   const weight = parseFloat(weightForm.weight_kg)
   if (isNaN(weight) || weight <= 0) {
-    Snackbar.warning('请输入有效体重')
+    showToast('请输入有效体重')
     return
   }
   submitting.value = true
   try {
     await weightApi.create({ weight_kg: weight, recorded_at: getRecordedAt(activeDate.value) })
-    Snackbar.success('体重记录成功')
+    showSuccessToast('体重记录成功')
     showWeightDialog.value = false
     await loadMonthData()
   } catch {
-    Snackbar.error('记录失败，请重试')
+    showFailToast('记录失败，请重试')
   } finally {
     submitting.value = false
   }
@@ -352,12 +440,12 @@ async function submitWeight() {
 
 async function submitExercise() {
   if (!exerciseForm.content.trim()) {
-    Snackbar.warning('请输入锻炼内容')
+    showToast('请输入锻炼内容')
     return
   }
   const duration = parseInt(exerciseForm.duration_minutes)
   if (isNaN(duration) || duration <= 0) {
-    Snackbar.warning('请输入有效时长')
+    showToast('请输入有效时长')
     return
   }
   submitting.value = true
@@ -367,11 +455,11 @@ async function submitExercise() {
       exercised_at: getRecordedAt(activeDate.value),
       duration_minutes: duration,
     })
-    Snackbar.success('锻炼记录成功')
+    showSuccessToast('锻炼记录成功')
     showExerciseDialog.value = false
     await loadMonthData()
   } catch {
-    Snackbar.error('记录失败，请重试')
+    showFailToast('记录失败，请重试')
   } finally {
     submitting.value = false
   }
@@ -380,20 +468,28 @@ async function submitExercise() {
 async function submitMeal() {
   submitting.value = true
   try {
-    await mealApi.create({
-      date: activeDate.value,
-      meal_type: currentMealType.value,
-      intake_level: mealForm.intake_level,
-      note: mealForm.note || undefined,
-    })
-    Snackbar.success('饮食记录成功')
+    if (editingMealId.value) {
+      await mealApi.update(editingMealId.value, {
+        intake_level: mealForm.intake_level,
+        note: mealForm.note || undefined,
+      })
+      showSuccessToast('修改成功')
+    } else {
+      await mealApi.create({
+        date: activeDate.value,
+        meal_type: currentMealType.value,
+        intake_level: mealForm.intake_level,
+        note: mealForm.note || undefined,
+      })
+      showSuccessToast('饮食记录成功')
+    }
     showMealDialog.value = false
     await loadMonthData()
   } catch (e) {
     if (e.response?.status === 409) {
-      Snackbar.warning('该餐次已记录')
+      showToast('该餐次已记录')
     } else {
-      Snackbar.error('记录失败，请重试')
+      showFailToast('记录失败，请重试')
     }
   } finally {
     submitting.value = false
@@ -401,32 +497,82 @@ async function submitMeal() {
 }
 
 async function handleLogout() {
-  const action = await Dialog({
-    title: '退出登录',
-    message: '确定要退出吗？',
-    confirmButton: true,
-    cancelButton: true,
-    confirmButtonText: '退出',
-    cancelButtonText: '取消',
-  })
-  if (action === 'confirm') {
+  try {
+    await showConfirmDialog({
+      title: '退出登录',
+      message: '确定要退出吗？',
+      confirmButtonText: '退出',
+      cancelButtonText: '取消',
+      confirmButtonColor: '#764ba2',
+    })
     auth.logout()
     router.push({ name: 'Login' })
+  } catch {
+    // 用户取消
   }
 }
 
 watch([currentYear, currentMonth], loadMonthData)
 onMounted(loadMonthData)
+
+// ─── 键盘遮挡修复 ───
+const keyboardOffset = ref(0)
+
+function onViewportResize() {
+  if (!window.visualViewport) return
+  const offset = window.innerHeight - window.visualViewport.offsetTop - window.visualViewport.height
+  keyboardOffset.value = Math.max(0, offset)
+}
+
+const popupKeyboardStyle = computed(() =>
+  keyboardOffset.value > 0
+    ? { transform: `translateY(-${keyboardOffset.value}px)`, transition: 'transform 0.1s' }
+    : {}
+)
+
+watch([showWeightDialog, showExerciseDialog, showMealDialog], ([w, e, m]) => {
+  if (w || e || m) {
+    window.visualViewport?.addEventListener('resize', onViewportResize)
+    window.visualViewport?.addEventListener('scroll', onViewportResize)
+  } else {
+    window.visualViewport?.removeEventListener('resize', onViewportResize)
+    window.visualViewport?.removeEventListener('scroll', onViewportResize)
+    keyboardOffset.value = 0
+  }
+})
 </script>
 
 <style scoped>
 .dashboard {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: #f2f2f7;
+  padding-bottom: 24px;
+}
+
+/* ─── 顶部导航 ─── */
+.top-bar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+:deep(.van-nav-bar__title) {
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+:deep(.van-nav-bar) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.logout-btn {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 0;
 }
 
 .content {
-  padding: 12px;
+  padding: 12px 12px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -437,7 +583,28 @@ onMounted(loadMonthData)
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.nav-arrow {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: #fff;
+  border-radius: 50%;
+  font-size: 22px;
+  color: #764ba2;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.nav-arrow:active {
+  background: #ede7f6;
 }
 
 .month-title {
@@ -448,13 +615,13 @@ onMounted(loadMonthData)
   text-align: center;
 }
 
-/* ─── 日历容器 ─── */
-.calendar-container {
+/* ─── 日历卡片 ─── */
+.calendar-card {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  padding: 8px 6px 10px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  padding: 10px 8px 12px;
 }
 
 .cal-grid {
@@ -465,22 +632,24 @@ onMounted(loadMonthData)
 
 .cal-head {
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   color: #aaa;
-  padding: 4px 0 6px;
+  padding: 4px 0 8px;
   font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .cal-cell {
-  min-height: 62px;
+  min-height: 64px;
   padding: 4px 2px 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background 0.12s;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cal-cell:not(.cell-empty):active {
@@ -492,21 +661,24 @@ onMounted(loadMonthData)
 }
 
 .cell-exercise {
-  background: #e3f2fd;
+  background: linear-gradient(135deg, rgba(100, 181, 246, 0.35), rgba(100, 181, 246, 0.22));
 }
 
 .cell-selected {
-  outline: 2px solid #764ba2;
+  outline: 2.5px solid #764ba2;
   outline-offset: -2px;
 }
 
-/* 日期数字 */
+.cell-selected:not(.cell-exercise) {
+  background: rgba(118, 75, 162, 0.06);
+}
+
 .day-num {
   font-size: 13px;
   font-weight: 600;
   color: #333;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -515,11 +687,11 @@ onMounted(loadMonthData)
 }
 
 .num-today {
-  background: #764ba2;
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: #fff;
+  box-shadow: 0 2px 6px rgba(118, 75, 162, 0.4);
 }
 
-/* 体重均值 */
 .day-weight {
   font-size: 9px;
   color: #764ba2;
@@ -534,7 +706,6 @@ onMounted(loadMonthData)
   margin-top: 2px;
 }
 
-/* 三餐彩点 */
 .day-dots {
   display: flex;
   gap: 2px;
@@ -549,27 +720,18 @@ onMounted(loadMonthData)
 }
 
 .dot-empty {
-  border: 1.5px solid #ccc;
+  border: 1.5px solid #ddd;
   background: transparent;
 }
 
-.dot-green {
-  background: #4caf50;
-}
+.dot-green  { background: #34c759; }
+.dot-yellow { background: #ff9f0a; }
+.dot-red    { background: #ff3b30; }
 
-.dot-yellow {
-  background: #ffc107;
-}
-
-.dot-red {
-  background: #f44336;
-}
-
-/* 图例 */
 .legend {
   display: flex;
   gap: 10px;
-  padding: 8px 4px 0;
+  padding: 10px 4px 0;
   flex-wrap: wrap;
   border-top: 1px solid #f0f0f0;
   margin-top: 8px;
@@ -580,27 +742,27 @@ onMounted(loadMonthData)
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: #888;
+  color: #8e8e93;
 }
 
-.exercise-badge {
+.exercise-dot {
   display: inline-block;
   width: 14px;
   height: 10px;
-  background: #e3f2fd;
-  border: 1px solid #90caf9;
-  border-radius: 2px;
+  background: linear-gradient(135deg, rgba(100, 181, 246, 0.3), rgba(100, 181, 246, 0.15));
+  border: 1px solid rgba(100, 181, 246, 0.5);
+  border-radius: 3px;
 }
 
-/* ─── 操作区 ─── */
-.action-section {
+/* ─── 操作卡片 ─── */
+.action-card {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .action-header {
@@ -610,34 +772,59 @@ onMounted(loadMonthData)
 }
 
 .action-date {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   color: #1a1a2e;
 }
 
-.today-badge {
-  font-size: 11px;
-  background: #764ba2;
-  color: #fff;
-  border-radius: 10px;
-  padding: 2px 8px;
+.today-tag {
+  border-radius: 10px !important;
+  font-size: 11px !important;
+  padding: 2px 8px !important;
 }
 
-.action-row {
+.btn-row {
   display: flex;
   gap: 10px;
 }
 
 .action-btn {
   flex: 1;
-  font-size: 14px !important;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border: none;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* 饮食按钮组 */
+.btn-purple {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+}
+
+.btn-purple:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.btn-emoji {
+  font-size: 20px;
+}
+
+/* ─── 饮食记录 ─── */
 .meal-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .meal-label {
@@ -653,37 +840,97 @@ onMounted(loadMonthData)
 
 .meal-btn {
   flex: 1;
-  padding: 10px 0;
+  padding: 11px 0;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
-  background: #764ba2;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, transform 0.1s;
+  box-shadow: 0 3px 10px rgba(118, 75, 162, 0.25);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .meal-btn:active {
   opacity: 0.8;
+  transform: scale(0.97);
 }
 
 .meal-btn-done {
-  background: #e0e0e0;
-  color: #999;
+  background: #e8e0f5;
+  color: #764ba2;
+  border: 1.5px solid #c8b4e8;
+  box-shadow: none;
+}
+
+.meal-btn-future {
+  background: #f0f0f5;
+  color: #bbb;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ─── 底部弹窗 ─── */
+.bottom-popup {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 8px;
+}
+
+.popup-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.popup-close {
+  font-size: 18px;
+  color: #aaa;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.popup-body {
+  padding: 12px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.popup-field {
+  background: #f7f7fb !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+:deep(.popup-field .van-cell) {
+  background: #f7f7fb;
+  border-radius: 12px;
+}
+
+:deep(.popup-field .van-cell::after) {
+  display: none;
+}
+
+:deep(.van-button--round) {
+  height: 50px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 /* ─── 饮食状态选择 ─── */
-.intake-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .intake-label {
   font-size: 13px;
-  color: #666;
+  color: #8e8e93;
+  margin-bottom: -4px;
 }
 
 .intake-options {
@@ -693,32 +940,35 @@ onMounted(loadMonthData)
 
 .intake-opt {
   flex: 1;
-  padding: 10px 0;
-  border-radius: 8px;
+  padding: 12px 0;
+  border-radius: 12px;
   text-align: center;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.intake-opt:active {
+  transform: scale(0.97);
+}
+
+.intake-emoji {
+  font-size: 20px;
 }
 
 .intake-selected {
   border-color: #764ba2 !important;
+  box-shadow: 0 2px 8px rgba(118, 75, 162, 0.2);
 }
 
-.opt-green {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.opt-yellow {
-  background: #fff8e1;
-  color: #f57f17;
-}
-
-.opt-red {
-  background: #ffebee;
-  color: #c62828;
-}
+.opt-green  { background: #e9f9ee; color: #2e7d32; }
+.opt-yellow { background: #fff8e1; color: #e65100; }
+.opt-red    { background: #fff0f0; color: #c62828; }
 </style>

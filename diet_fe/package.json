@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@varlet/ui": "^3.5.0",
     "axios": "^1.7.0",
     "pinia": "^2.2.0",
+    "vant": "^4.9.24",
     "vue": "^3.5.0",
     "vue-router": "^4.4.0"
   },

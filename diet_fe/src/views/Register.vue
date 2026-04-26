@@ -1,91 +1,95 @@
 <template>
-  <div class="auth-page">
-    <div class="auth-container">
-      <!-- Logo -->
-      <div class="brand">
-        <div class="brand-icon">🥗</div>
-        <h1 class="brand-name">Diet</h1>
-        <p class="brand-desc">开始你的健康之旅</p>
-      </div>
+  <div class="auth-page" :style="{ height: pageHeight + 'px' }">
+    <!-- 渐变头部 -->
+    <div class="auth-header">
+      <div class="brand-icon">🥗</div>
+      <h1 class="brand-name">Diet</h1>
+      <p class="brand-desc">开始你的健康之旅</p>
+    </div>
 
-      <!-- Form Card -->
-      <var-paper :elevation="2" class="form-card">
-        <h2 class="form-title">创建账号</h2>
+    <!-- 表单卡片 -->
+    <div class="auth-card">
+      <h2 class="card-title">创建账号</h2>
 
-        <var-form ref="formRef" class="form-body">
-          <var-input
+      <van-form ref="formRef" @submit="handleRegister">
+        <div class="fields">
+          <van-field
             v-model="form.username"
-            placeholder="用户名"
+            name="username"
+            placeholder="用户名（至少 2 个字符）"
             :rules="[
-              v => !!v || '请输入用户名',
-              v => v.length >= 2 || '用户名至少 2 个字符',
+              { required: true, message: '请输入用户名' },
+              { validator: v => v.length >= 2, message: '用户名至少 2 个字符' },
             ]"
-            size="large"
-            class="form-field"
             clearable
+            autocomplete="username"
+            class="auth-field"
           >
-            <template #prepend-icon>
-              <var-icon name="account-circle-outline" />
+            <template #left-icon>
+              <span class="field-icon">👤</span>
             </template>
-          </var-input>
+          </van-field>
 
-          <var-input
+          <van-field
             v-model="form.password"
+            name="password"
+            type="password"
             placeholder="密码（至少 8 位）"
             :rules="[
-              v => !!v || '请输入密码',
-              v => v.length >= 8 || '密码至少 8 个字符',
+              { required: true, message: '请输入密码' },
+              { validator: v => v.length >= 8, message: '密码至少 8 个字符' },
             ]"
-            type="password"
-            size="large"
-            class="form-field"
+            autocomplete="new-password"
+            class="auth-field"
           >
-            <template #prepend-icon>
-              <var-icon name="lock-outline" />
+            <template #left-icon>
+              <span class="field-icon">🔒</span>
             </template>
-          </var-input>
+          </van-field>
 
-          <var-input
+          <van-field
             v-model="form.confirmPassword"
+            name="confirmPassword"
+            type="password"
             placeholder="确认密码"
             :rules="[
-              v => !!v || '请再次输入密码',
-              v => v === form.password || '两次密码不一致',
+              { required: true, message: '请再次输入密码' },
+              { validator: v => v === form.password, message: '两次密码不一致' },
             ]"
-            type="password"
-            size="large"
-            class="form-field"
+            autocomplete="new-password"
+            class="auth-field"
           >
-            <template #prepend-icon>
-              <var-icon name="lock-check-outline" />
+            <template #left-icon>
+              <span class="field-icon">✅</span>
             </template>
-          </var-input>
-
-          <var-button
-            type="primary"
-            size="large"
-            block
-            :loading="loading"
-            class="submit-btn"
-            @click="handleRegister"
-          >
-            注册
-          </var-button>
-        </var-form>
-
-        <div class="form-footer">
-          <span class="footer-text">已有账号？</span>
-          <router-link to="/login" class="footer-link">立即登录</router-link>
+          </van-field>
         </div>
-      </var-paper>
+
+        <van-button
+          type="primary"
+          size="large"
+          block
+          round
+          native-type="submit"
+          :loading="loading"
+          class="submit-btn"
+        >
+          注册
+        </van-button>
+      </van-form>
+
+      <p class="card-footer">
+        已有账号？
+        <router-link to="/login" class="footer-link">立即登录</router-link>
+      </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Snackbar } from '@varlet/ui'
+import { showSuccessToast, showFailToast } from 'vant'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -93,25 +97,24 @@ const auth = useAuthStore()
 
 const formRef = ref(null)
 const loading = ref(false)
+const form = reactive({ username: '', password: '', confirmPassword: '' })
+const pageHeight = ref(window.visualViewport?.height ?? window.innerHeight)
 
-const form = reactive({
-  username: '',
-  password: '',
-  confirmPassword: '',
-})
+function onViewportResize() {
+  pageHeight.value = window.visualViewport?.height ?? window.innerHeight
+}
+
+onMounted(() => window.visualViewport?.addEventListener('resize', onViewportResize))
+onUnmounted(() => window.visualViewport?.removeEventListener('resize', onViewportResize))
 
 async function handleRegister() {
-  const valid = await formRef.value?.validate()
-  if (!valid) return
-
   loading.value = true
   try {
     await auth.register({ username: form.username, password: form.password })
-    Snackbar.success('注册成功，欢迎加入！')
+    showSuccessToast('注册成功，欢迎加入！')
     router.push({ name: 'Dashboard' })
   } catch (err) {
-    const msg = err.response?.data?.message || '注册失败，请稍后重试'
-    Snackbar.error(msg)
+    showFailToast(err.response?.data?.message || '注册失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -119,84 +122,114 @@ async function handleRegister() {
 </script>
 
 <style scoped>
+/* ─── 页面容器 ─── */
 .auth-page {
-  min-height: 100vh;
   display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: linear-gradient(160deg, #11998e 0%, #38ef7d 100%);
+}
+
+/* ─── 渐变头部 ─── */
+.auth-header {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  padding: 24px 16px;
-}
-
-.auth-container {
-  width: 100%;
-  max-width: 400px;
-}
-
-.brand {
+  padding: 40px 24px 24px;
   text-align: center;
-  margin-bottom: 32px;
+  overflow: hidden;
 }
 
 .brand-icon {
-  font-size: 56px;
+  font-size: 64px;
   line-height: 1;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
 }
 
 .brand-name {
-  font-size: 36px;
+  font-size: 42px;
   font-weight: 800;
   color: #fff;
-  letter-spacing: 2px;
-  margin-bottom: 6px;
+  letter-spacing: 6px;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .brand-desc {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.5px;
 }
 
-.form-card {
-  border-radius: 20px !important;
-  padding: 32px 24px 24px;
+/* ─── 表单卡片 ─── */
+.auth-card {
   background: #fff;
+  border-radius: 28px 28px 0 0;
+  padding: 32px 24px 40px;
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.08);
 }
 
-.form-title {
-  font-size: 22px;
+.card-title {
+  font-size: 24px;
   font-weight: 700;
   color: #1a1a2e;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   text-align: center;
 }
 
-.form-body {
+/* ─── 输入字段 ─── */
+.fields {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
-.form-field {
-  margin-bottom: 8px;
+.auth-field {
+  border-radius: 14px;
+  overflow: hidden;
+  background: #f5f5fa;
 }
 
+:deep(.auth-field.van-cell) {
+  background: #f5f5fa;
+  padding: 14px 16px;
+}
+
+:deep(.auth-field.van-cell::after) {
+  display: none;
+}
+
+:deep(.auth-field .van-field__left-icon) {
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.field-icon {
+  font-size: 17px;
+}
+
+/* ─── 提交按钮 ─── */
 .submit-btn {
-  margin-top: 16px;
-  height: 48px !important;
-  border-radius: 12px !important;
+  height: 52px !important;
   font-size: 16px !important;
   font-weight: 600 !important;
+  letter-spacing: 2px;
   background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+  border: none !important;
+  box-shadow: 0 8px 24px rgba(17, 153, 142, 0.4);
 }
 
-.form-footer {
+/* ─── 底部导航 ─── */
+.card-footer {
   text-align: center;
   margin-top: 20px;
   font-size: 14px;
-}
-
-.footer-text {
   color: #999;
 }
 
@@ -206,8 +239,5 @@ async function handleRegister() {
   text-decoration: none;
   margin-left: 4px;
 }
-
-.footer-link:hover {
-  text-decoration: underline;
-}
 </style>
+
