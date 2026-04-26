@@ -1,7 +1,12 @@
 REGISTRY   ?= # e.g. docker.io/yourname
 BE_IMAGE   := $(if $(REGISTRY),$(REGISTRY)/diet-be,diet-be)
 FE_IMAGE   := $(if $(REGISTRY),$(REGISTRY)/diet-fe,diet-fe)
-TAG        ?= latest
+
+# 优先用 git tag，没有 tag 则用 短 commit hash，均附加 dirty 标记
+GIT_TAG    := $(shell git describe --tags --exact-match 2>/dev/null)
+GIT_HASH   := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+GIT_DIRTY  := $(shell git status --porcelain 2>/dev/null | grep -q . && echo -dirty || echo)
+TAG        ?= $(if $(GIT_TAG),$(GIT_TAG),$(GIT_HASH))$(GIT_DIRTY)
 
 BUILDER    := diet-builder
 
