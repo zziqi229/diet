@@ -1,4 +1,5 @@
 from flask.views import MethodView
+from flask import current_app
 from flask_smorest import Blueprint
 from flask_jwt_extended import create_access_token
 
@@ -26,18 +27,23 @@ class RegisterResource(MethodView):
         password = data.get("password") or ""
 
         if not username or not password:
+            current_app.logger.warning("register rejected reason=missing_credentials")
             return {"success": False, "message": "username and password are required"}, 400
 
         if User.query.filter_by(username=username).first():
+            current_app.logger.warning("register rejected reason=username_exists username=%s", username)
             return {"success": False, "message": "username already exists"}, 409
 
         if User.query.count() >= 10:
+            current_app.logger.warning("register rejected reason=max_users_reached username=%s", username)
             return {"success": False, "message": "registration is closed, max users reached"}, 403
 
         user = User(username=username)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
+
+        current_app.logger.info("register success user_id=%s username=%s", user.id, user.username)
 
         token = create_access_token(identity=str(user.id))
         return {
@@ -58,11 +64,15 @@ class LoginResource(MethodView):
         password = data.get("password") or ""
 
         if not identifier or not password:
+            current_app.logger.warning("login rejected reason=missing_credentials")
             return {"success": False, "message": "username and password are required"}, 400
 
         user = User.query.filter_by(username=identifier).first()
         if not user or not user.check_password(password):
+            current_app.logger.warning("login rejected reason=invalid_credentials username=%s", identifier)
             return {"success": False, "message": "invalid credentials"}, 401
+
+        current_app.logger.info("login success user_id=%s username=%s", user.id, user.username)
 
         token = create_access_token(identity=str(user.id))
         return {

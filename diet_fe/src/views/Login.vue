@@ -4,7 +4,7 @@
     <div class="auth-header">
       <div class="brand-icon">🥗</div>
       <h1 class="brand-name">Diet</h1>
-      <p class="brand-desc">记录饮食，健康生活，亲亲老婆加油！</p>
+      <p class="brand-desc">记录饮食，健康生活</p>
     </div>
 
     <!-- 表单卡片 -->

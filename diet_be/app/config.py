@@ -28,6 +28,13 @@ class Config:
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret")
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=7)
 
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+    LOG_TIMEZONE = os.getenv("LOG_TIMEZONE", "Asia/Shanghai")
+    LOG_DIR = os.getenv("LOG_DIR", "/var/log/diet")
+    LOG_TO_FILE = os.getenv("LOG_TO_FILE", "true")
+    LOG_FILE_BASENAME = os.getenv("LOG_FILE_BASENAME", "diet-be")
+    LOG_BACKUP_COUNT = int(os.getenv("LOG_BACKUP_COUNT", "14"))
+
 
 class DevConfig(Config):
     DEBUG = True
