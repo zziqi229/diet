@@ -259,7 +259,7 @@ const exerciseForm = reactive({ content: '', duration_minutes: '' })
 const mealForm = reactive({ intake_level: 'normal', note: '' })
 
 // ─── 静态配置 ───
-const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+const weekDays = ['一', '二', '三', '四', '五', '六', '日']
 const mealTypes = [
   { type: 'breakfast', label: '早饭' },
   { type: 'lunch', label: '午饭' },
@@ -280,7 +280,7 @@ const mealDialogTitle = computed(() => {
 const calendarCells = computed(() => {
   const year = currentYear.value
   const month = currentMonth.value
-  const firstWeekday = new Date(year, month, 1).getDay()
+  const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const cells = []
   for (let i = 0; i < firstWeekday; i++) {
