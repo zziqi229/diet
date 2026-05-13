@@ -22,6 +22,11 @@ build-arm:
 	docker build -t $(BE_IMAGE):$(TAG)-arm64 ./diet_be
 	docker build -t $(FE_IMAGE):$(TAG)-arm64 ./diet_fe
 
+# ── ARM64 前端构建 ─────────────────────────────────────────────────────────────
+.PHONY: build-fe-arm
+build-fe-arm:
+	docker build -t $(FE_IMAGE):$(TAG)-arm64 ./diet_fe
+
 # ── AMD64 (x86-64 / linux/amd64) — 跨平台用 buildx，x86 原生机器直接 docker build ──
 .PHONY: build-amd64
 build-amd64: buildx-init
@@ -30,6 +35,15 @@ build-amd64: buildx-init
 		--load \
 		-t $(BE_IMAGE):$(TAG)-amd64 \
 		./diet_be
+	docker buildx build --builder $(BUILDER) \
+		--platform linux/amd64 \
+		--load \
+		-t $(FE_IMAGE):$(TAG)-amd64 \
+		./diet_fe
+
+# ── AMD64 前端构建（buildx）───────────────────────────────────────────────────
+.PHONY: build-fe-amd64
+build-fe-amd64: buildx-init
 	docker buildx build --builder $(BUILDER) \
 		--platform linux/amd64 \
 		--load \
